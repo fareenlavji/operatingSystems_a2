@@ -1,0 +1,2 @@
+program_child 10
+program_parent 25

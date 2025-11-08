@@ -4,13 +4,15 @@
 #include<iostream>
 #include<fstream>
 #include<string>
+#include <utility>
 #include<vector>
 #include<random>
-#include<utility>
 #include<sstream>
 #include<iomanip>
 #include <algorithm>
-#include<stdio.h>
+#include<cstdio>
+#include <tuple>
+#include <chrono>
 
 #define ADDR_BASE   0
 #define VECTOR_SIZE 2
@@ -21,7 +23,7 @@ struct memory_partition_t {
     std::string code;
 
     memory_partition_t(unsigned int _pn, unsigned int _s, std::string _c):
-        partition_number(_pn), size(_s), code(_c) {}
+        partition_number(_pn), size(_s), code(std::move(_c)) {}
 };
 
 memory_partition_t memory[] = {
@@ -38,22 +40,22 @@ struct PCB{
     int             PPID;
     std::string     program_name;
     unsigned int    size;
-    int             partition_number;
+    unsigned int    partition_number;
 
     PCB(unsigned int _pid, int _ppid, std::string _pn, unsigned int _size, int _part_num):
-        PID(_pid), PPID(_ppid), program_name(_pn), size(_size), partition_number(_part_num) {}
+        PID(_pid), PPID(_ppid), program_name(std::move(_pn)), size(_size), partition_number(_part_num) {}
 };
 
 struct external_file{
     std::string     program_name;
-    unsigned int    size;
+    unsigned int    size{};
 };
 
-//Allocates a program to memory (if there is space)
-//returns true if the allocation was sucessful, false if not.
-bool allocate_memory(PCB* current) {
-    for(int i = 5; i >= 0; i--) { //Start from smallest partition
-        //check is the code will fit and if the partition is empty
+// Allocates a program to memory (if there is space)
+// returns true if the allocation was successful, false if not.
+inline bool allocate_memory(PCB* current) {
+    for(int i = 5; i >= 0; i--) { //Start from the smallest partition
+        //check is the code will fit, and if the partition is empty
         if(memory[i].size >= current->size && memory[i].code == "empty") {
             current->partition_number = memory[i].partition_number;
             memory[i].code = current->program_name;
@@ -63,19 +65,18 @@ bool allocate_memory(PCB* current) {
     return false;
 }
 
-//frees the memory given PCB.
-void free_memory(PCB* process) {
+// Frees the memory given PCB.
+inline void free_memory(PCB* process) {
     memory[process->partition_number - 1].code = "empty";
     process->partition_number = -1;
 }
 
-// Following function was taken from stackoverflow; helper function for splitting strings
-std::vector<std::string> split_delim(std::string input, std::string delim) {
+// The following function was taken from stackoverflow; helper function for splitting strings
+inline std::vector<std::string> split_delim(std::string input, const std::string &delim) {
     std::vector<std::string> tokens;
     std::size_t pos = 0;
-    std::string token;
     while ((pos = input.find(delim)) != std::string::npos) {
-        token = input.substr(0, pos);
+        std::string token = input.substr(0, pos);
         tokens.push_back(token);
         input.erase(0, pos + delim.length());
     }
@@ -94,10 +95,10 @@ std::vector<std::string> split_delim(std::string input, std::string delim) {
  * @return a vector of strings (the parsed vector table), a vector of delays, a vector of external files
  * 
  */
-std::tuple<std::vector<std::string>, std::vector<int>, std::vector<external_file>>parse_args(int argc, char** argv) {
+inline std::tuple<std::vector<std::string>, std::vector<int>, std::vector<external_file>>parse_args(int argc, char** argv) {
     if(argc != 5) {
         std::cout << "ERROR!\nExpected 4 argument, received " << argc - 1 << std::endl;
-        std::cout << "To run the program, do: ./interrutps <your_trace_file.txt> <your_vector_table.txt> <your_device_table.txt> <your_external_files.txt>" << std::endl;
+        std::cout << "To run the program, do: ./interrupts <your_trace_file.txt> <your_vector_table.txt> <your_device_table.txt> <your_external_files.txt>" << std::endl;
         exit(1);
     }
 
@@ -159,8 +160,8 @@ std::tuple<std::vector<std::string>, std::vector<int>, std::vector<external_file
     return {vectors, delays, external_files};
 }
 
-//Parces each trace and returns a tuple: {Tace activity, duration or interrupt number, program name (if applicable)}
-std::tuple<std::string, int, std::string> parse_trace(std::string trace) {
+// Parses each trace and returns a tuple: {Tace activity, duration or interrupt number, program name (if applicable)}
+inline std::tuple<std::string, int, std::string> parse_trace(const std::string &trace) {
     //split line by ','
     auto parts = split_delim(trace, ",");
     if (parts.size() < 2) {
@@ -181,10 +182,10 @@ std::tuple<std::string, int, std::string> parse_trace(std::string trace) {
     return {activity, duration_intr, extern_file};
 }
 
-//Default interrupt boilerplate
-std::pair<std::string, int> intr_boilerplate(int current_time, int intr_num, int context_save_time, std::vector<std::string> vectors) {
+// Default interrupt boilerplate
+inline std::pair<std::string, int> intr_boilerplate(int current_time, int intr_num, int context_save_time, const std::vector<std::string> &vectors) {
 
-    std::string execution = "";
+    std::string execution;
 
     execution += std::to_string(current_time) + ", " + std::to_string(1) + ", switch to kernel mode\n";
     current_time++;
@@ -206,8 +207,8 @@ std::pair<std::string, int> intr_boilerplate(int current_time, int intr_num, int
     return std::make_pair(execution, current_time);
 }
 
-//Writes a string to a file
-void write_output(std::string execution, const char* filename) {
+// Writes a string to a file
+inline void write_output(const std::string &execution, const char* filename) {
     std::ofstream output_file(filename);
 
     if (output_file.is_open()) {
@@ -221,9 +222,9 @@ void write_output(std::string execution, const char* filename) {
     std::cout << "Output generated in execution.txt" << std::endl;
 }
 
-//Helper function for a sanity check. Prints the external files table
-void print_external_files(std::vector<external_file> files) {
-    const int tableWidth = 24;
+// Helper function for a sanity check. Prints the external files table
+inline void print_external_files(const std::vector<external_file> &files) {
+    constexpr int tableWidth = 24;
 
     std::cout << "List of external files (" << files.size() << " entry(s)): " << std::endl;
     
@@ -253,10 +254,10 @@ void print_external_files(std::vector<external_file> files) {
     std::cout << "+" << std::setfill('-') << std::setw(tableWidth) << "+" << std::endl;
 }
 
-//This function takes as input: the current PCB and the waitqueue (which is a
-//std::vector of the PCB struct); the function returns the information as a table
-std::string print_PCB(PCB current, std::vector<PCB> _PCB) {
-    const int tableWidth = 55;
+// This function takes as input: the current PCB and the wait queue (which is a
+// std::vector of the PCB struct); the function returns the information as a table
+inline std::string print_PCB(const PCB &current, const std::vector<PCB> &PCB) {
+    constexpr int tableWidth = 55;
 
     std::stringstream buffer;
     
@@ -292,7 +293,7 @@ std::string print_PCB(PCB current, std::vector<PCB> _PCB) {
                   << std::setw(2) << "|" << std::endl;
     
     // Print each PCB entry
-    for (const auto& program : _PCB) {
+    for (const auto& program : PCB) {
         buffer << "|"
                   << std::setfill(' ') << std::setw(4) << program.PID
                   << std::setw(2) << "|"
@@ -314,17 +315,25 @@ std::string print_PCB(PCB current, std::vector<PCB> _PCB) {
 
 
 // Searches the external_files table and returns the size of the program
-unsigned int get_size(std::string name, std::vector<external_file> external_files) {
+inline int get_size(const std::string &name, const std::vector<external_file> &external_files) {
     int size = -1;
 
-    for (auto file : external_files) { 
+    for (const auto& file : external_files) {
         if(file.program_name == name){
-            size = file.size;
+            size = static_cast<int>(file.size);
             break;
         }
     }
 
     return size;
+}
+
+// Helper function that generates a random number between 1-10 ms
+inline int rand_1_10() {
+    static std::mt19937 rng(static_cast<unsigned int>(
+        std::chrono::high_resolution_clock::now().time_since_epoch().count()));
+    static std::uniform_int_distribution<int> dist(1, 10);
+    return dist(rng);
 }
 
 #endif
