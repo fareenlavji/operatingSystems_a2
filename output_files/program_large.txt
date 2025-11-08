@@ -1,0 +1,3 @@
+RUN 10
+WAIT 5
+RUN 15

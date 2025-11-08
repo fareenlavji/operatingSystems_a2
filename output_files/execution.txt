@@ -1,0 +1,28 @@
+0, 1, switch to kernel mode
+1, 10, context saved
+11, 1, find vector 2 in memory position 0x0004
+12, 1, load address 0X0695 into the PC
+13, 8, save parent PCB
+23, 9, create child PCB (PID=1)
+25, 2, assign partition 5 to child
+30, 3, scheduler()
+37, 1, IRET
+38, 1, switch to kernel mode
+39, 10, context saved
+49, 1, find vector 3 in memory position 0x0006
+50, 1, load address 0X042B into the PC
+51, 8, validate executable program1
+59, 1, free current partition
+60, 150, load executable into memory (10 MB)
+210, 2, scheduler()
+213, 1, IRET
+214, 1, child exit (free partition)
+215, 1, switch to kernel mode
+216, 10, context saved
+226, 1, find vector 3 in memory position 0x0006
+227, 1, load address 0X042B into the PC
+228, 7, validate executable program2
+234, 1, free current partition
+235, 225, load executable into memory (15 MB)
+460, 5, scheduler()
+468, 1, IRET

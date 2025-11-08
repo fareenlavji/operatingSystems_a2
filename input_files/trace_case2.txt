@@ -1,0 +1,7 @@
+FORK
+IF_CHILD
+EXEC program_child
+ENDIF
+IF_PARENT
+EXEC program_parent
+ENDIF
