@@ -87,3 +87,7 @@ The provided trace file was executed successfully. The simulator correctly handl
 
 ## 5. Conclusion
 The simulator successfully models basic process creation and execution using `fork()` and `exec()` semantics. It handles memory allocation, conditional execution, and logging as specified. The custom test cases validated both normal and edge-case behaviors. Future improvements could include dynamic memory management, support for nested conditionals, and more advanced scheduling algorithms.
+
+## 6. Assignment 2 Repositories
+### 6.1 Part 2 --> https://github.com/IbrahimKom/SYSC4001_A2_P2.git
+### 6.2 Part 3 --> https://github.com/fareenlavji/operatingSystems_a2.git
